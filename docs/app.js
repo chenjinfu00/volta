@@ -63,6 +63,7 @@ function controls(){
   $('page-input').disabled=!loaded||locked;$('page-input').value=state.page;
   const range=$('page-range');range.disabled=!loaded||locked;range.max=loaded?state.pdf.numPages:1;
   if(document.activeElement!==range)range.value=state.page;
+  range.style.setProperty('--page-progress',`${loaded?(state.page-1)/Math.max(1,state.pdf.numPages-1)*100:0}%`);
   $('page-count').textContent=loaded?`/ ${state.pdf.numPages}`:'/ —';
   bookmarks?.refresh();
   $('page-label').textContent=loaded?`PDF 第 ${state.page}${state.spread&&state.page<state.pdf.numPages?'–'+(state.page+1):''} 页`:'等待导入';
@@ -91,18 +92,18 @@ function ready(){
   else status('准备好，就开始演奏','先导入曲谱并学习一次翻页点','等待准备');
 }
 async function persist(){
-  if(!state.score)return;
+  if(!state.score||state.score.temporary)return;
   try{await saveScore({...state.score,page:state.page,reference:state.reference});}
   catch{toast('浏览器存储不足，当前仍可使用，但关闭后可能需要重新导入。');}
 }
-async function openPDF(buffer,name,restored=null,onProgress){
+async function openPDF(buffer,name,restored=null,onProgress,{temporary=false}={}){
   if(performing())throw new Error('请先退出演出模式再切换曲谱。');
   const remote=buffer?.url?buffer:null;
   if(!remote&&buffer.byteLength>60*1024*1024)throw new Error('手动导入的 PDF 请小于 60 MB；曲谱库中的大文件采用按需读取。');
   const oldPhase=state.phase;state.phase='loading';controls();$('render-status').hidden=false;
   clearTimeout(warmTimer);state.renderId++;pageCache.prioritize([]);previewCache.prioritize([]);
   try{
-    const id=remote?.id||await scoreID(buffer),saved=restored||await loadScore(id).catch(()=>null);
+    const id=remote?.id||await scoreID(buffer),saved=temporary?null:restored||await loadScore(id).catch(()=>null);
     const source=remote?{url:remote.url,withCredentials:true,disableAutoFetch:true,disableStream:true,rangeChunkSize:262144}:{data:new Uint8Array(buffer.slice(0))};
     onProgress?.('正在读取曲谱…');
     const pdf=await loadPDFDocument(pdfjs.getDocument,{...source,cMapUrl:new URL('./vendor/cmaps/',import.meta.url).href,cMapPacked:true,standardFontDataUrl:new URL('./vendor/standard_fonts/',import.meta.url).href,wasmUrl:new URL('./vendor/wasm/',import.meta.url).href,isEvalSupported:false},state.pdf,({loaded,total})=>{
@@ -110,7 +111,7 @@ async function openPDF(buffer,name,restored=null,onProgress){
     });
     $('chopin-audio')?.remove();
     await inkFolder?.save({quiet:true}).catch(()=>{});
-    state.pdf=pdf;state.score=remote?{id,name,remote,path:remote.path||null,local:!!remote.local,system:!!remote.system}:{id,name,buffer,path:buffer.path||null,local:false,system:false};state.reference=null;state.draft=null;state.startAnchor=0;state.zoom=1;state.fit='screen';$('score-zoom').value='screen';ink.setScore(id);bookmarks?.setScore(state.score);midi?.setScore(library?.item(id));
+    state.pdf=pdf;state.score=remote?{id,name,remote,path:remote.path||null,local:!!remote.local,system:!!remote.system,temporary}:{id,name,buffer,path:buffer.path||null,local:false,system:false,temporary};state.reference=null;state.draft=null;state.startAnchor=0;state.zoom=1;state.fit='screen';$('score-zoom').value='screen';ink.setScore(id);bookmarks?.setScore(state.score);midi?.setScore(library?.item(id));
     fitProfile=null;
     // Page bounds travel with the collection, in its own folder.
     try{
@@ -120,10 +121,11 @@ async function openPDF(buffer,name,restored=null,onProgress){
     readingPosition.setScore(id);
     if(saved?.reference){try{state.reference=validateReference(saved.reference,pdf.numPages);}catch{toast('旧的学习记录需要重新建立；PDF 已恢复。');}}
     state.page=Math.max(1,Math.min(pdf.numPages,saved?.page||1));
-    $('score-title').textContent=name.replace(/\.pdf$/i,'');$('reader-title').textContent=name.replace(/\.pdf$/i,'');$('score-meta').textContent=`${pdf.numPages} 页 · ${remote?'曲谱库':'本机导入'}`;
+    const displayName=name.replace(/\.pdf$/i,''),displayMeta=`${pdf.numPages} 页 · ${temporary?'临时打开':remote?'曲谱库':'本机导入'}`;
+    $('score-title').textContent=displayName;$('reader-title').textContent=displayName;$('score-meta').textContent=displayMeta;$('reader-meta').textContent=displayMeta;
     $('empty-state').hidden=true;$('pages').hidden=false;
     onProgress?.('正在显示谱页…');
-  controls();renderAnchors();ready();await renderPages();await persist();library?.setCurrent(state.score);if(!state.score.system)recent?.remember({id,name,path:state.score.path||library?.local?.path?.(id)||null});shell?.close();offline?.refresh();
+  controls();renderAnchors();ready();await renderPages();await persist();library?.setCurrent(temporary?null:state.score);if(!temporary&&!state.score.system)recent?.remember({id,name,path:state.score.path||library?.local?.path?.(id)||null});shell?.close();offline?.refresh();
   }finally{state.phase=oldPhase;$('render-status').hidden=true;controls();}
 }
 async function renderPages({anchor=null,beforePaint=()=>{}}={}){
@@ -196,7 +198,7 @@ async function renderPages({anchor=null,beforePaint=()=>{}}={}){
 
 function renderAnchors(){
   const ref=state.draft||state.reference,list=$('anchor-list');list.replaceChildren();
-  if(!ref){const p=document.createElement('p');p.className='muted';p.textContent='学习完成后，翻页点会保存在这里。';list.append(p);return;}
+  if(!ref)return;
   ref.anchors.forEach((a,i)=>{
     const row=document.createElement('div');row.className='anchor'+(state.page===a.page?' active':'');
     const button=document.createElement('button');button.className='text-button';button.style.textDecoration='none';button.textContent=`${i===0?'起始':'第 '+(i+1)+' 段'} · 第 ${a.page} 页`;
@@ -229,7 +231,7 @@ async function navigate(page,{mark:shouldMark=true,automatic=false,anchor}={}){
   const previousPage=state.page,performanceTurn=performing();
   if(performanceTurn){performanceTurning=true;$('performance-error').hidden=true;}
   state.page=page;controls();renderAnchors();
-  try{await renderPages();if(!learning())savePosition(state.score.id,state.page).catch(()=>toast('页码暂时无法保存；翻页仍可使用。'));}
+  try{await renderPages();if(!learning()&&!state.score.temporary)savePosition(state.score.id,state.page).catch(()=>toast('页码暂时无法保存；翻页仍可使用。'));}
   catch(error){
     if(!performanceTurn)throw error;
     state.page=previousPage;controls();$('performance-error').textContent='这页未能载入，请再按一次翻页。';$('performance-error').hidden=false;
@@ -375,16 +377,17 @@ for(const event of ['fullscreenchange','webkitfullscreenchange'])document.addEve
 });
 $('score-stage').addEventListener('contextmenu',e=>{if(performing())e.preventDefault();});
 
-for(const id of ['import-button','empty-import','imslp-upload'])$(id).onclick=()=>{if(performing())return;$('imslp-dialog').close();$('pdf-input').click();};
-$('pdf-input').onchange=action(async e=>{const file=e.target.files[0];e.target.value='';if(file)await openPDF(await file.arrayBuffer(),file.name);});
+$('import-button').onclick=$('empty-import').onclick=()=>{if(!performing())$('imslp-dialog').showModal();};
+$('imslp-upload').onclick=()=>{if(performing())return;$('imslp-dialog').close();$('pdf-input').click();};
+$('pdf-input').onchange=action(async e=>{const file=e.target.files[0];e.target.value='';if(file)await openPDF(await file.arrayBuffer(),file.name,null,undefined,{temporary:true});});
 $('audio-button').onclick=()=>$('audio-input').click();$('audio-input').onchange=action(async e=>{const file=e.target.files[0];e.target.value='';if(file)await learnFile(file);});
-$('help-button').onclick=()=>$('help-dialog').showModal();$('imslp-button').onclick=()=>$('imslp-dialog').showModal();
+$('help-button').onclick=()=>$('help-dialog').showModal();
 document.querySelectorAll('.dialog-close,.dialog-done').forEach(b=>b.onclick=()=>b.closest('dialog').close());
 $('prev-button').onclick=()=>requestTurn(-1);
 $('next-button').onclick=()=>requestTurn(1);
 $('page-input').onchange=action(()=>navigate(Number($('page-input').value)));
 // Dragging shows the page you are heading for; the turn happens when you let go.
-$('page-range').oninput=()=>{$('page-input').value=$('page-range').value;$('page-label').textContent=`PDF 第 ${$('page-range').value} 页`;};
+$('page-range').oninput=()=>{$('page-input').value=$('page-range').value;$('page-label').textContent=`PDF 第 ${$('page-range').value} 页`;$('page-range').style.setProperty('--page-progress',`${(Number($('page-range').value)-1)/Math.max(1,Number($('page-range').max)-1)*100}%`);};
 $('page-range').onchange=action(()=>navigate(Number($('page-range').value)));
 $('single-button').onclick=action(async()=>{state.spread=false;controls();await renderPages();});
 $('spread-button').onclick=action(async()=>{state.spread=true;controls();await renderPages();});
@@ -410,7 +413,7 @@ $('url-import').onclick=action(async()=>{
   const url=new URL($('pdf-url').value);if(url.protocol!=='https:'&&url.protocol!=='http:')throw new Error('请输入 HTTP 或 HTTPS PDF 链接。');
   if(/imslp\.org$/.test(url.hostname)&&!url.pathname.toLowerCase().endsWith('.pdf'))throw new Error('这是 IMSLP 页面。请在原网站下载 PDF，再从本机导入。');
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
-  try{const response=await fetch(url,{credentials:'omit',signal:controller.signal});if(!response.ok)throw new Error('无法读取 PDF');const data=await response.arrayBuffer();await openPDF(data,decodeURIComponent(url.pathname.split('/').pop())||'IMSLP 曲谱');$('imslp-dialog').close();}
+  try{const response=await fetch(url,{credentials:'omit',signal:controller.signal});if(!response.ok)throw new Error('无法读取 PDF');const data=await response.arrayBuffer();await openPDF(data,decodeURIComponent(url.pathname.split('/').pop())||'IMSLP 曲谱',null,undefined,{temporary:true});$('imslp-dialog').close();}
   catch{throw new Error('这个网站不允许直接读取，请打开原链接下载 PDF，再导入文件。');}finally{clearTimeout(timer);}
 });
 $('demo-button').onclick=action(async()=>{
@@ -512,7 +515,7 @@ recent=setupRecentScores({
   },
   onError:error=>toast(errorMessage(error)),
 });
-offline=setupOffline(()=>state.score,openPDF,toast,()=>settings.value);
+offline=setupOffline(()=>state.score,openPDF,toast);
 const deploy=setupDeploy({toast,onDone:()=>offline?.refresh()});
 $('offline-deploy').onclick=()=>deploy?.open();
 $('account-note').textContent='本机阅谱 · 曲谱来自你选的文件夹，批注保存在本机';

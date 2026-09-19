@@ -152,7 +152,8 @@ test('the writing dock carries the only explicit annotation export action',async
   const html=await fs.readFile(new URL('../docs/index.html',import.meta.url),'utf8');
   assert.match(html,/id="ink-save"/,'saving is where the writing hand already is');
   assert.match(html,/title="导出批注备份"/);
-  assert.match(html,/<span>导出<\/span>/);
+  assert.match(html,/aria-label="导出批注备份"/);
+  assert.doesNotMatch(html,/<button id="ink-save"[^>]*>[^<]*导出/,'export is icon-only in the writing dock');
   for(const id of ['ink-folder-save','ink-export','backup-export','backup-import','backup-file'])assert.doesNotMatch(html,new RegExp('id="'+id+'"'),id+' is removed');
   assert.doesNotMatch(html,/画笔设置|橡皮设置/,'the two ··· buttons are gone');
   assert.match(html,/id="pen-options"/);assert.match(html,/id="erase-options"/);
@@ -166,6 +167,8 @@ test('the writing dock carries the only explicit annotation export action',async
   const folder=await fs.readFile(new URL('../docs/ink-folder.js',import.meta.url),'utf8');
   assert.match(folder,/if\(dock\)dock\.onclick=keep/,'the dock owns the export action');
   assert.match(folder,/exportBackup/,'the export action creates a backup file');
+  assert.match(folder,/setAttribute\('aria-label','导出批注备份'\)/,'the icon-only control keeps its accessible name');
+  assert.doesNotMatch(folder,/querySelector\('span'\)\.textContent/,'export setup no longer expects a visible label');
 });
 
 test('export does not ask for folder write permission',async()=>{
@@ -188,7 +191,7 @@ test('whether markings survive a closed app is answered without being asked',asy
 test('an empty reader offers the whole collection first, one PDF second',async()=>{
   const html=await fs.readFile(new URL('../docs/index.html',import.meta.url),'utf8');
   assert.match(html,/id="empty-folder" class="primary">选择曲谱文件夹/,'the first offer is the folder');
-  assert.match(html,/id="empty-import" class="text-button">只打开一份 PDF/,'a single PDF is still one click away');
+  assert.match(html,/id="empty-import" class="text-button"[^>]*>临时打开 PDF/,'a single PDF is still one click away');
   const app=await fs.readFile(new URL('../docs/app.js',import.meta.url),'utf8');
   assert.match(app,/if\(library\?\.local\)\$\('library-button'\)\.click\(\);else localFolder\?\.choose\(\)/,
     'once a folder is open the same button leads back into the shelf');
