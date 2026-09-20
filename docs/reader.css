@@ -162,12 +162,10 @@ body.chrome-idle .pencil-dock[data-side=right]::after{right:100%;width:56px;top:
 body.chrome-idle .pencil-dock[data-side=left]::after{left:100%;width:56px;top:0;bottom:0}
 /* Anything in use stays out on screen at full strength. */
 body.chrome-idle .edge-reveal:hover,body.chrome-idle .edge-reveal:focus-visible,
-body.chrome-idle .pencil-dock:hover,body.chrome-idle .pencil-dock:focus-within,body.chrome-idle .pencil-dock.dragging,
-body.chrome-idle .pencil-dock:has(.pencil-tool.selected),body.chrome-idle .pencil-dock:has(details[open]),
+body.chrome-idle .pencil-dock.dragging,body.chrome-idle .pencil-dock:has(details[open]),
 body.chrome-idle .pencil-dock:has(.pencil-feedback:not([hidden])){opacity:1;transition:opacity .18s ease,transform .18s ease}
 body.chrome-idle .shelf-reveal:hover,body.chrome-idle .shelf-reveal:focus-visible,
-body.chrome-idle .pencil-dock:hover,body.chrome-idle .pencil-dock:focus-within,body.chrome-idle .pencil-dock.dragging,
-body.chrome-idle .pencil-dock:has(.pencil-tool.selected),body.chrome-idle .pencil-dock:has(details[open]),
+body.chrome-idle .pencil-dock.dragging,body.chrome-idle .pencil-dock:has(details[open]),
 body.chrome-idle .pencil-dock:has(.pencil-feedback:not([hidden])){transform:none}
 body.chrome-idle .tools-reveal:hover,body.chrome-idle .tools-reveal:focus-visible{transform:translateX(-50%)}
 @media(prefers-reduced-motion:reduce){

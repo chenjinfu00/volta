@@ -1,6 +1,6 @@
 // Static builds have no server-side commit metadata. Keep this value with the published
 // source so the reader can identify which build is open, including when it is offline.
-export const BUILD_INFO={at:'2026-09-19T12:54:00+02:00',label:'2026-09-19 12:54 (+02:00)'};
+export const BUILD_INFO={at:'2026-09-20T10:25:00+02:00',label:'2026-09-20 10:25 (+02:00)'};
 export const VERSION_UPDATE={
   id:'6729bd76f00615d8e0a3e1a125d926b11545482f67a38a127665c4a19197f130',
   name:'版本更新说明.pdf',

@@ -156,7 +156,7 @@ iPad Safari 重开后若要求重新授权，选择同一个文件夹即可。
 ## 开发
 
 ```bash
-VOLTA_LIBRARY=/path/to/临时曲谱库 npm test  # 完整 141 项；每个 AI worktree 先明确指定同一个测试库
+VOLTA_LIBRARY=/path/to/临时曲谱库 npm test  # 完整 148 项；每个 AI worktree 先明确指定同一个测试库
 npm test                      # 没有指定曲谱库时，只跳过依赖完整本地库的检查
 node scripts/cache-manifest.mjs   # 改过 docs/ 之后重建离线清单
 ```

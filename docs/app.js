@@ -21,12 +21,14 @@ import {setupLocalFolder} from './local-library.js';
 import {drainInk,showMerged} from './annotation-backup.js';
 import {setupInkFolder} from './ink-folder.js';
 import {BUILD_INFO,VERSION_UPDATE} from './build-info.js';
+import {installScreenAwake} from './screen-awake.js';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL('./vendor/pdf.worker.mjs',import.meta.url).href;
 const $ = id => document.getElementById(id);
 const state={score:null,pdf:null,page:1,spread:false,phase:'idle',draft:null,reference:null,microphone:null,matcher:null,turner:null,renderId:0,audioURL:null,abort:null,startAnchor:0,frameTime:0,op:0,zoom:1,fit:'screen'};
 const ink=new Ink(toast,{canWrite:()=>!!state.pdf&&state.phase==='idle'&&!performing()});
 const readerViewport=installReaderViewport();
+installScreenAwake();
 const readingPosition=new ReadingPosition($('score-stage'));
 let toastTimer,wakeLock,resizeTimer,library,recent,bookmarks,midi,performanceMode,performanceSnapshot,performanceTurning=false,shell,offline,inkFolder;
 let cachePDF=null,visibleKeys=[],previewKeys=[],warmTimer,fitProfile=null;
