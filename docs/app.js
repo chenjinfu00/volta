@@ -16,6 +16,7 @@ import {installReaderViewport} from './reader-viewport.js';
 import {ReadingPosition} from './reading-position.js';
 import {setupRecentScores} from './recent-scores.js';
 import {setupBookmarks} from './bookmarks.js';
+import {setupPDFOutline} from './pdf-outline.js';
 import {setupMIDI} from './midi-ui.js';
 import {setupLocalFolder} from './local-library.js';
 import {drainInk,showMerged} from './annotation-backup.js';
@@ -30,7 +31,7 @@ const ink=new Ink(toast,{canWrite:()=>!!state.pdf&&state.phase==='idle'&&!perfor
 const readerViewport=installReaderViewport();
 installScreenAwake();
 const readingPosition=new ReadingPosition($('score-stage'));
-let toastTimer,wakeLock,resizeTimer,library,recent,bookmarks,midi,performanceMode,performanceSnapshot,performanceTurning=false,shell,offline,inkFolder;
+let toastTimer,wakeLock,resizeTimer,library,recent,bookmarks,outline,midi,performanceMode,performanceSnapshot,performanceTurning=false,shell,offline,inkFolder;
 let cachePDF=null,visibleKeys=[],previewKeys=[],warmTimer,fitProfile=null;
 const pageCache=new PageRenderCache((page,metrics,signal)=>renderScorePage(cachePDF,page,metrics,signal));
 const previewCache=new PageRenderCache((page,metrics,signal)=>renderScorePage(cachePDF,page,metrics,signal),{maxEntries:12,maxPixels:3_500_000});
@@ -68,6 +69,7 @@ function controls(){
   range.style.setProperty('--page-progress',`${loaded?(state.page-1)/Math.max(1,state.pdf.numPages-1)*100:0}%`);
   $('page-count').textContent=loaded?`/ ${state.pdf.numPages}`:'/ —';
   bookmarks?.refresh();
+  outline?.refresh();
   $('page-label').textContent=loaded?`PDF 第 ${state.page}${state.spread&&state.page<state.pdf.numPages?'–'+(state.page+1):''} 页`:'等待导入';
   $('listen-button').disabled=state.phase!=='following'&&(state.phase!=='idle'||!state.reference);
   $('listen-button').textContent=state.phase==='following'?'停止聆听':'开始聆听 ↗';
@@ -113,7 +115,7 @@ async function openPDF(buffer,name,restored=null,onProgress,{temporary=false}={}
     });
     $('chopin-audio')?.remove();
     await inkFolder?.save({quiet:true}).catch(()=>{});
-    state.pdf=pdf;state.score=remote?{id,name,remote,path:remote.path||null,local:!!remote.local,system:!!remote.system,temporary}:{id,name,buffer,path:buffer.path||null,local:false,system:false,temporary};state.reference=null;state.draft=null;state.startAnchor=0;state.zoom=1;state.fit='screen';$('score-zoom').value='screen';ink.setScore(id);bookmarks?.setScore(state.score);midi?.setScore(library?.item(id));
+    state.pdf=pdf;state.score=remote?{id,name,remote,path:remote.path||null,local:!!remote.local,system:!!remote.system,temporary}:{id,name,buffer,path:buffer.path||null,local:false,system:false,temporary};state.reference=null;state.draft=null;state.startAnchor=0;state.zoom=1;state.fit='screen';$('score-zoom').value='screen';ink.setScore(id);bookmarks?.setScore(state.score);outline?.setDocument(pdf);midi?.setScore(library?.item(id));
     fitProfile=null;
     // Page bounds travel with the collection, in its own folder.
     try{
@@ -501,6 +503,12 @@ bookmarks=setupBookmarks({
   score:()=>state.score,page:()=>state.page,
   canJump:()=>!!state.pdf&&['idle','following','learning','reference'].includes(state.phase),
   jump:page=>{shell?.close();navigate(page).catch(error=>toast(errorMessage(error)));},
+  toast,
+});
+outline=setupPDFOutline({
+  page:()=>state.page,
+  canJump:()=>!!state.pdf&&['idle','following','learning','reference'].includes(state.phase),
+  jump:page=>{shell?.close();navigate(page,{mark:false}).catch(error=>toast(errorMessage(error)));},
   toast,
 });
 recent=setupRecentScores({

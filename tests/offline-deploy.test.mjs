@@ -42,12 +42,12 @@ test('the service worker saves the shell in batches and answers the page',async(
   assert.match(sw,/attempt<3/,'each shell asset gets bounded retries');
   assert.match(sw,/failedURLs/,'a persistent failure identifies the resource for diagnosis');
   assert.match(sw,/\.shell-state/,'the file list is kept for offline status');
-  assert.match(sw,/volta-shell-20260920-1025/,'a published shell update gets a fresh cache');
+  assert.match(sw,/volta-shell-20260920-1453/,'a published shell update gets a fresh cache');
   assert.match(sw,/skipWaiting/,'a new shell takes control without waiting for an old tab to close');
   const offline=await fs.readFile(new URL('../docs/offline.js',import.meta.url),'utf8');
   const deploy=await fs.readFile(new URL('../docs/offline-deploy.js',import.meta.url),'utf8');
-  assert.match(offline,/sw\.js\?version=20260920-1025/,'normal startup asks the browser to check the new worker');
-  assert.match(deploy,/sw\.js\?version=20260920-1025/,'manual deployment asks for the same worker version');
+  assert.match(offline,/sw\.js\?version=20260920-1453/,'normal startup asks the browser to check the new worker');
+  assert.match(deploy,/sw\.js\?version=20260920-1453/,'manual deployment asks for the same worker version');
   const html=await fs.readFile(new URL('../docs/index.html',import.meta.url),'utf8');
   assert.match(html,/id="offline-deploy"/);
   assert.match(html,/id="deploy-dialog"/);

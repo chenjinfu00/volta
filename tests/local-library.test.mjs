@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
-import {relativePaths,matchLibrary} from '../docs/local-library.js';
+import {relativePaths,matchLibrary,shelfFromPath,catalogueWithFolderShelves} from '../docs/local-library.js';
 
 const file=name=>({name,size:1});
 const entry=(path,name=path.split('/').pop())=>({webkitRelativePath:path,name});
@@ -35,6 +35,17 @@ test('a folder answers with the scores the catalogue asks for, and says which ar
   assert.match(local,/entry\.path===rootBackup/,'a backup saved beside catalog.json is also readable');
   assert.match(local,/showDirectoryPicker\(\{id:'volta-library',mode:'read'\}\)/,'folder selection does not request write access yet');
   assert.match(local,/requestPermission\(\{mode:'readwrite'\}\)/,'the sync action can request write access later');
+});
+
+test('the first real folder is the shelf shown by the app',()=>{
+  assert.equal(shelfFromPath('原神/蒙德/风与牧歌之城/总谱 · a.pdf'),'原神');
+  assert.equal(shelfFromPath('曲谱/其他/D大调卡农/钢琴独奏 · b.pdf'),'其他','the old wrapper is ignored');
+  assert.equal(shelfFromPath('曲谱库数据/catalog.json'),'','metadata is never a shelf');
+  const catalog=catalogueWithFolderShelves(
+    {items:[{id:'a',composer:'帕赫贝尔'},{id:'b',composer:'莫扎特'}]},
+    {files:{a:'其他/D大调卡农/钢琴独奏 · a.pdf',b:'沃尔夫冈·阿马德乌斯·莫扎特/奏鸣曲/全集 · b.pdf'}},
+  );
+  assert.deepEqual(catalog.items.map(item=>item.libraryFolder),['其他','沃尔夫冈·阿马德乌斯·莫扎特']);
 });
 
 test('the shelf reads a folder before it reads the network, and the app keeps working offline',async()=>{

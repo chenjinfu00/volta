@@ -79,8 +79,8 @@ body.focus-reader>.topbar{display:none}
 .practice-drawer{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px 0;font-size:14px}
 .practice-drawer>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;min-height:44px;font-weight:600}
 .practice-drawer>summary::-webkit-details-marker,.pencil-dock summary::-webkit-details-marker{display:none}
-.practice-drawer>summary>span:last-child,.bookmark-bar>summary>span:last-child{font-size:20px;color:var(--muted);transition:transform .16s}
-.practice-drawer[open]>summary>span:last-child,.bookmark-bar[open]>summary>span:last-child{transform:rotate(90deg)}
+.practice-drawer>summary>span:last-child,.bookmark-bar>summary>span:last-child,.pdf-outline>summary>span:last-child{font-size:20px;color:var(--muted);transition:transform .16s}
+.practice-drawer[open]>summary>span:last-child,.bookmark-bar[open]>summary>span:last-child,.pdf-outline[open]>summary>span:last-child{transform:rotate(90deg)}
 .practice-content{padding-top:18px}.practice-intro{font-size:12px;line-height:1.8;color:var(--muted);margin-bottom:12px}
 .learning-actions{display:flex;gap:8px}.learning-actions button{flex:1;padding:10px;font-size:13px}
 .practice-content .reference-panel{margin:14px 0;padding:12px;background:var(--tint);border:0}
@@ -264,6 +264,16 @@ dialog .dialog-close:hover{background:var(--tint)}
 @media(max-width:430px){.top-drawer .reader-mode-actions #fullscreen-button{display:none}.top-drawer #page-input{display:none}.top-drawer .page-jump #page-count{margin:0;font-size:11px}.top-drawer .view-segments button{width:36px;min-width:36px}}
 .ink-size i{flex:none;width:var(--dot,6px);height:var(--dot,6px);max-width:22px;max-height:22px;border-radius:50%;background:var(--ink)}
 /* Bookmarks: the pages you keep coming back to, one tap away. */
+.pdf-outline{border-top:1px solid var(--line);padding:6px 0}
+.pdf-outline>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;cursor:pointer;font-size:14px;font-weight:600}
+.pdf-outline>summary::-webkit-details-marker{display:none}
+.pdf-outline-list{display:grid;max-height:min(42vh,420px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:5px 2px 8px;scrollbar-gutter:stable}
+.pdf-outline-item{--outline-depth:0;display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;min-height:38px;padding:7px 10px 7px calc(10px + var(--outline-depth)*18px);border:0;border-radius:9px;background:transparent;color:var(--ink);font-size:13px;text-align:left}
+button.pdf-outline-item:hover{background:var(--tint)}
+.pdf-outline-item.group{font-weight:650}
+.pdf-outline-item.current{background:var(--lime)}
+.pdf-outline-item span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pdf-outline-item small{flex:none;color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
 .bookmark-bar{border-top:1px solid var(--line);padding:6px 0}
 .bookmark-bar>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;cursor:pointer;font-size:14px;font-weight:600}
 .bookmark-bar>summary::-webkit-details-marker{display:none}

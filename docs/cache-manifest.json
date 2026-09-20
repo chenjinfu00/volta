@@ -29,6 +29,7 @@
   "./offline.js",
   "./page-cache.js",
   "./pdf-document.js",
+  "./pdf-outline.js",
   "./pencil-input.js",
   "./performance-mode.js",
   "./piano.js",

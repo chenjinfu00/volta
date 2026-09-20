@@ -106,7 +106,7 @@ export function setupLibrary(openPDF,toast,canOpen,getCurrentScore=()=>null,getO
     if(!selected&&!query){
       $('library-count').textContent='按'+labels[mode]+'浏览 · 同曲的版本收在一起';
       for(const [key,count] of groups)addCategory(key,count,()=>pickGroup(key));
-    }else if(selected&&mode==='composer'&&!['流行音乐','动漫','Animenz'].includes(selected)&&!genre&&!query&&counts(inGroup,'genre').length>1){
+    }else if(selected&&mode==='composer'&&!['流行音乐与其他游戏','动漫','其他','陈致逸','路德维希·范·贝多芬'].includes(selected)&&!genre&&!query&&counts(inGroup,'genre').length>1){
       $('library-count').textContent=selected+' · 先选择体裁';
       addCategory('全部曲目',inGroup.length,()=>pickGenre('*'));
       const genres=prioritizeLibraryGroups(counts(inGroup,'genre'),selected===recency.composer?recency.genre:'');
